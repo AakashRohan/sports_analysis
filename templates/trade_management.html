@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trade Management</title>
+</head>
+<body>
+    <h1>Trade Management</h1>
+    <form method="post" action="/create_trade">
+        <label for="sport">Sport:</label>
+        <input type="text" id="sport" name="sport" required><br>
+        <label for="match_id">Match ID:</label>
+        <input type="text" id="match_id" name="match_id" required><br>
+        <label for="team">Team:</label>
+        <input type="text" id="team" name="team" required><br>
+        <label for="odds">Odds:</label>
+        <input type="number" step="0.01" id="odds" name="odds" required><br>
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" name="amount" required><br>
+        <label for="trade_type">Trade Type:</label>
+        <select id="trade_type" name="trade_type">
+            <option value="real">Real</option>
+            <option value="paper">Paper</option>
+        </select><br>
+        <label for="exit_odds">Exit Odds:</label>
+        <input type="number" step="0.01" id="exit_odds" name="exit_odds"><br>
+        <button type="submit">Create Trade</button>
+    </form>
+
+    <h2>Current Trades</h2>
+    <table border="1">
+        <tr>
+            <th>Sport</th>
+            <th>Match ID</th>
+            <th>Team</th>
+            <th>Amount</th>
+            <th>Trade Type</th>
+            <th>Exit Odds</th>
+        </tr>
+        {% for trade in trades %}
+        <tr>
+            <td>{{ trade.sport }}</td>
+            <td>{{ trade.match_id }}</td>
+            <td>{{ trade.team }}</td>
+            <td>{{ trade.amount }}</td>
+            <td>{{ trade.trade_type }}</td>
+            <td>{{ trade.exit_odds }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Current Matches</h2>
+    <table border="1">
+        <tr>
+            <th>Sport</th>
+            <th>Match ID</th>
+            <th>Home Team</th>
+            <th>Away Team</th>
+            <th>Odds Home</th>
+            <th>Odds Away</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+        {% for match in matches %}
+        <tr>
+            <td>{{ match.sport }}</td>
+            <td>{{ match.match_id }}</td>
+            <td>{{ match.home_team }}</td>
+            <td>{{ match.away_team }}</td>
+            <td>{{ match.odds_home }}</td>
+            <td>{{ match.odds_away }}</td>
+            <td>{{ match.status }}</td>
+            <td>
+                <button onclick="createTrade('{{ match.sport }}', '{{ match.match_id }}', '{{ match.home_team }}', '{{ match.odds_home }}')">Trade Home</button>
+                <button onclick="createTrade('{{ match.sport }}', '{{ match.match_id }}', '{{ match.away_team }}', '{{ match.odds_away }}')">Trade Away</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <script>
+        function createTrade(sport, matchId, team, odds) {
+            document.getElementById('sport').value = sport;
+            document.getElementById('match_id').value = matchId;
+            document.getElementById('team').value = team;
+            document.getElementById('odds').value = odds;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Current Matches</title>
+</head>
+<body>
+    <h1>Current Matches</h1>
+    <form method="get" action="/filter_matches">
+        <label for="sport">Sport:</label>
+        <select id="sport" name="sport">
+            <option value="all">All</option>
+            <option value="cricket">Cricket</option>
+            <option value="tennis">Tennis</option>
+            <option value="soccer">Soccer</option>
+        </select>
+        <label for="min_odds">Minimum Odds:</label>
+        <input type="number" id="min_odds" name="min_odds" step="0.01">
+        <label for="status">Status:</label>
+        <select id="status" name="status">
+            <option value="all">All</option>
+            <option value="current">Current</option>
+            <option value="pre-match">Pre-match</option>
+        </select>
+        <button type="submit">Filter Matches</button>
+    </form>
+    <ul id="matches-list">
+        {% for match in matches %}
+            <li>{{ match.sport }}: {{ match.home_team }} vs {{ match.away_team }} - Odds: Home {{ match.odds_home }}, Away {{ match.odds_away }} ({{ match.status }})</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
