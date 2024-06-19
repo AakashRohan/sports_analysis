@@ -1,6 +1,5 @@
 from flask import Flask, request, render_template, redirect, url_for
 import mysql.connector
-from config import get_db_connection
 
 app = Flask(__name__)
 
@@ -71,14 +70,13 @@ def filter_matches():
     
     return render_template('filtered_matches.html', matches=matches)
 
-@app.route('/trade_management')
+@app.route('/trade_management', methods=['GET'])
 def trade_management():
     sport = request.args.get('sport', 'all')
-    min_odds = request.args.get('min_odds', '0')
-    status = request.args.get('status', 'all')
-
-    connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
+    tournament = request.args.get('tournament', 'all')
+    team = request.args.get('team', '')
+    start_time = request.args.get('start_time', '')
+    bet_type = request.args.get('bet_type', 'all')
 
     query = "SELECT * FROM odds WHERE 1=1"
     params = []
@@ -86,14 +84,21 @@ def trade_management():
     if sport != 'all':
         query += " AND sport = %s"
         params.append(sport)
-    if min_odds:
-        query += " AND (odds_home >= %s OR odds_away >= %s)"
-        params.append(min_odds)
-        params.append(min_odds)
-    if status != 'all':
-        query += " AND status = %s"
-        params.append(status)
+    if tournament != 'all':
+        query += " AND tournament = %s"
+        params.append(tournament)
+    if team:
+        query += " AND (home_team = %s OR away_team = %s)"
+        params.extend([team, team])
+    if start_time:
+        query += " AND start_time >= %s"
+        params.append(start_time)
+    if bet_type != 'all':
+        query += " AND bet_type = %s"
+        params.append(bet_type)
 
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
     cursor.execute(query, params)
     matches = cursor.fetchall()
 
@@ -108,6 +113,7 @@ def trade_management():
 @app.route('/create_trade', methods=['POST'])
 def create_trade():
     sport = request.form['sport']
+    tournament = request.form['tournament']
     match_id = request.form['match_id']
     team = request.form['team']
     odds = request.form['odds']
@@ -118,10 +124,10 @@ def create_trade():
     connection = get_db_connection()
     cursor = connection.cursor()
     query = """
-    INSERT INTO trades (sport, match_id, team, initial_odds, amount, trade_type, exit_odds)
-    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    INSERT INTO trades (sport, tournament, match_id, team, initial_odds, amount, trade_type, exit_odds)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(query, (sport, match_id, team, odds, amount, trade_type, exit_odds))
+    cursor.execute(query, (sport, tournament, match_id, team, odds, amount, trade_type, exit_odds))
     connection.commit()
     cursor.close()
     connection.close()
