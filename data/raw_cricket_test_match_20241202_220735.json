@@ -1,0 +1,191 @@
+[
+    {
+        "id": "cf15d951af985e9ccb68d92e8875dfa0",
+        "sport_key": "cricket_test_match",
+        "sport_title": "Test Matches",
+        "commence_time": "2024-12-02T14:45:00Z",
+        "home_team": "West Indies",
+        "away_team": "Bangladesh",
+        "bookmakers": []
+    },
+    {
+        "id": "d436d105e4a05ddd0445d0707493e723",
+        "sport_key": "cricket_test_match",
+        "sport_title": "Test Matches",
+        "commence_time": "2024-12-05T08:30:00Z",
+        "home_team": "South Africa",
+        "away_team": "Sri Lanka",
+        "bookmakers": [
+            {
+                "key": "betrivers",
+                "title": "BetRivers",
+                "last_update": "2024-12-02T16:37:28Z",
+                "markets": [
+                    {
+                        "key": "h2h",
+                        "last_update": "2024-12-02T16:37:28Z",
+                        "outcomes": [
+                            {
+                                "name": "South Africa",
+                                "price": 1.33
+                            },
+                            {
+                                "name": "Sri Lanka",
+                                "price": 4.2
+                            },
+                            {
+                                "name": "Draw",
+                                "price": 14.0
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "key": "draftkings",
+                "title": "DraftKings",
+                "last_update": "2024-12-02T16:37:28Z",
+                "markets": [
+                    {
+                        "key": "h2h",
+                        "last_update": "2024-12-02T16:37:28Z",
+                        "outcomes": [
+                            {
+                                "name": "South Africa",
+                                "price": 1.35
+                            },
+                            {
+                                "name": "Sri Lanka",
+                                "price": 4.1
+                            },
+                            {
+                                "name": "Draw",
+                                "price": 13.0
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "87aaeb7757b43fd67b1faf1e09e3bcb5",
+        "sport_key": "cricket_test_match",
+        "sport_title": "Test Matches",
+        "commence_time": "2024-12-05T22:00:00Z",
+        "home_team": "New Zealand",
+        "away_team": "England",
+        "bookmakers": [
+            {
+                "key": "betrivers",
+                "title": "BetRivers",
+                "last_update": "2024-12-02T16:37:28Z",
+                "markets": [
+                    {
+                        "key": "h2h",
+                        "last_update": "2024-12-02T16:37:28Z",
+                        "outcomes": [
+                            {
+                                "name": "England",
+                                "price": 2.1
+                            },
+                            {
+                                "name": "New Zealand",
+                                "price": 2.1
+                            },
+                            {
+                                "name": "Draw",
+                                "price": 9.5
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "key": "draftkings",
+                "title": "DraftKings",
+                "last_update": "2024-12-02T16:37:28Z",
+                "markets": [
+                    {
+                        "key": "h2h",
+                        "last_update": "2024-12-02T16:37:28Z",
+                        "outcomes": [
+                            {
+                                "name": "England",
+                                "price": 2.05
+                            },
+                            {
+                                "name": "New Zealand",
+                                "price": 2.1
+                            },
+                            {
+                                "name": "Draw",
+                                "price": 9.0
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "87151db31080da6cb03c44dedcb6086c",
+        "sport_key": "cricket_test_match",
+        "sport_title": "Test Matches",
+        "commence_time": "2024-12-06T04:00:00Z",
+        "home_team": "Australia",
+        "away_team": "India",
+        "bookmakers": [
+            {
+                "key": "betrivers",
+                "title": "BetRivers",
+                "last_update": "2024-12-02T16:37:28Z",
+                "markets": [
+                    {
+                        "key": "h2h",
+                        "last_update": "2024-12-02T16:37:28Z",
+                        "outcomes": [
+                            {
+                                "name": "Australia",
+                                "price": 1.85
+                            },
+                            {
+                                "name": "India",
+                                "price": 2.45
+                            },
+                            {
+                                "name": "Draw",
+                                "price": 9.0
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "key": "draftkings",
+                "title": "DraftKings",
+                "last_update": "2024-12-02T16:37:28Z",
+                "markets": [
+                    {
+                        "key": "h2h",
+                        "last_update": "2024-12-02T16:37:28Z",
+                        "outcomes": [
+                            {
+                                "name": "Australia",
+                                "price": 1.77
+                            },
+                            {
+                                "name": "India",
+                                "price": 2.5
+                            },
+                            {
+                                "name": "Draw",
+                                "price": 9.0
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

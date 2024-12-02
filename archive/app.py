@@ -5,6 +5,9 @@ import requests
 import atexit
 import datetime
 import logging
+import json
+import os
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -55,14 +58,25 @@ def store_odds(odds, sport):
             odds_away = match['bookmakers'][0]['markets'][0]['outcomes'][1]['price']
             status = 'prematch'  # Assuming initial status as 'prematch'
             favorite = home_team if odds_home < odds_away else away_team
-            
-            query = """
+            match_date = datetime.datetime.now()  # Record the current timestamp as the match date
+
+            # Insert into the odds table
+            odds_query = """
             INSERT INTO odds (sport, tournament, match_id, home_team, away_team, odds_home, odds_away, status, favorite, last_updated)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
             ON DUPLICATE KEY UPDATE odds_home=VALUES(odds_home), odds_away=VALUES(odds_away), status=VALUES(status), favorite=VALUES(favorite), last_updated=CURRENT_TIMESTAMP
             """
-            values = (sport_key, 'tournament_placeholder', match_id, home_team, away_team, odds_home, odds_away, status, favorite)
-            cursor.execute(query, values)
+            odds_values = (sport_key, 'tournament_placeholder', match_id, home_team, away_team, odds_home, odds_away, status, favorite)
+            cursor.execute(odds_query, odds_values)
+
+            # Insert into the historical_odds table
+            historical_odds_query = """
+            INSERT INTO historical_odds (sport, tournament, match_id, home_team, away_team, odds_home, odds_away, status, match_date, home_score, away_score, outcome)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NULL, NULL, NULL)
+            """
+            historical_odds_values = (sport_key, 'tournament_placeholder', match_id, home_team, away_team, odds_home, odds_away, status, match_date)
+            cursor.execute(historical_odds_query, historical_odds_values)
+
             logging.info(f"Inserted/Updated odds for match {match_id}.")
         except KeyError as e:
             logging.error(f"Key error: {e} in match: {match}")
@@ -94,16 +108,26 @@ def update_scheduler():
 def fetch_and_update_data():
     fetch_odds()
 
-# Schedule to fetch live data every 10 minutes
+# Comment out or remove these scheduler-related lines
+"""
 scheduler = BackgroundScheduler()
 scheduler.add_job(func=fetch_and_update_data, trigger="interval", minutes=10)
 scheduler.start()
 
-# Schedule to fetch live data every 2 minutes for matches with real trades
 scheduler.add_job(func=fetch_and_update_data, trigger="interval", minutes=2, id='real_trades_scheduler')
 
-# Shut down the scheduler when exiting the app
 atexit.register(scheduler.shutdown)
+"""
+
+# Add a new route for manual fetching
+@app.route('/fetch_odds', methods=['POST'])
+def manual_fetch_odds():
+    try:
+        fetch_and_update_data()
+        return {'status': 'success', 'message': 'Odds fetched and updated successfully'}
+    except Exception as e:
+        logging.error(f"Error in manual fetch: {str(e)}")
+        return {'status': 'error', 'message': str(e)}, 500
 
 @app.route('/')
 def home():
@@ -226,6 +250,54 @@ def create_trade():
     connection.close()
     
     return redirect(url_for('trade_management'))
+
+def fetch_all_sports_data():
+    logging.info("Fetching all sports data...")
+    
+    try:
+        response = requests.get(
+            'https://api.the-odds-api.com/v4/sports',
+            params={
+                'apiKey': API_KEY,
+            },
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Create timestamp for filename
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'data/raw_sports_data_{timestamp}.json'
+            
+            # Ensure data directory exists
+            os.makedirs('data', exist_ok=True)
+            
+            # Save raw data with timestamp
+            with open(filename, 'w') as f:
+                json.dump(data, f, indent=4)
+            
+            logging.info(f"Fetched data successfully. Response saved to {filename}")
+            return data
+        else:
+            logging.error(f"Failed to fetch data. Status code: {response.status_code}")
+            return None
+            
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error fetching sports data: {str(e)}")
+        return None
+
+# Add the manual fetch endpoint
+@app.route('/fetch_sports_data', methods=['POST'])
+def manual_fetch_sports():
+    try:
+        data = fetch_all_sports_data()
+        if data:
+            return {'status': 'success', 'message': 'Sports data fetched and saved successfully'}
+        return {'status': 'error', 'message': 'Failed to fetch sports data'}, 500
+    except Exception as e:
+        logging.error(f"Error in manual fetch: {str(e)}")
+        return {'status': 'error', 'message': str(e)}, 500
 
 if __name__ == '__main__':
     app.run(debug=True)

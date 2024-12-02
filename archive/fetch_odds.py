@@ -5,6 +5,9 @@ import requests
 import atexit
 import datetime
 import logging
+import os
+from dotenv import load_dotenv
+import json
 
 app = Flask(__name__)
 
@@ -12,8 +15,7 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Your existing config for fetching odds
-API_KEY = '5fe5ad3125788a7f7806ce5b7644fa4b'  # Replace with your actual API key
-ODDS_API_URL = 'https://api.the-odds-api.com/v4/sports/{sport}/odds/'
+load_dotenv()
 
 def get_db_connection():
     connection = mysql.connector.connect(
@@ -24,21 +26,47 @@ def get_db_connection():
     )
     return connection
 
+def fetch_odds_for_sport(sport_key):
+    """Fetch odds for a single sport"""
+    API_KEY = os.getenv('ODDS_API_KEY')
+    ODDS_API_URL = f'https://api.the-odds-api.com/v4/sports/{sport_key}/odds/'
+    
+    params = {
+        'apiKey': API_KEY,
+        'regions': 'us',  # you can change this based on your needs
+        'markets': 'h2h'  # head-to-head odds
+    }
+    
+    try:
+        response = requests.get(ODDS_API_URL, params=params, timeout=10)
+        
+        # Save raw response for analysis
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'data/raw_{sport_key}_{timestamp}.json'
+        
+        os.makedirs('data', exist_ok=True)
+        
+        with open(filename, 'w') as f:
+            json.dump(response.json(), f, indent=4)
+            
+        logging.info(f"Data saved to {filename}")
+        
+        return response.json()
+        
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error fetching odds for {sport_key}: {str(e)}")
+        return None
+
 def fetch_odds():
     logging.info("Fetching odds data...")
     sports = ['cricket', 'soccer', 'tennis']
     for sport in sports:
-        response = requests.get(ODDS_API_URL.format(sport=sport), params={
-            'apiKey': API_KEY,
-            'regions': 'us',
-            'markets': 'h2h'
-        })
-        if response.status_code == 200:
-            data = response.json()
+        data = fetch_odds_for_sport(sport)
+        if data:
             logging.info(f"Fetched {len(data)} matches for {sport}.")
             store_odds(data, sport)
         else:
-            logging.error(f"Failed to fetch data for {sport}. Status code: {response.status_code}")
+            logging.error(f"Failed to fetch data for {sport}.")
 
 def store_odds(odds, sport):
     logging.info("Storing odds data in the database...")
@@ -55,25 +83,14 @@ def store_odds(odds, sport):
             odds_away = match['bookmakers'][0]['markets'][0]['outcomes'][1]['price']
             status = 'prematch'  # Assuming initial status as 'prematch'
             favorite = home_team if odds_home < odds_away else away_team
-            match_date = datetime.datetime.now()  # Record the current timestamp as the match date
-
-            # Insert into the odds table
-            odds_query = """
+            
+            query = """
             INSERT INTO odds (sport, tournament, match_id, home_team, away_team, odds_home, odds_away, status, favorite, last_updated)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
             ON DUPLICATE KEY UPDATE odds_home=VALUES(odds_home), odds_away=VALUES(odds_away), status=VALUES(status), favorite=VALUES(favorite), last_updated=CURRENT_TIMESTAMP
             """
-            odds_values = (sport_key, 'tournament_placeholder', match_id, home_team, away_team, odds_home, odds_away, status, favorite)
-            cursor.execute(odds_query, odds_values)
-
-            # Insert into the historical_odds table
-            historical_odds_query = """
-            INSERT INTO historical_odds (sport, tournament, match_id, home_team, away_team, odds_home, odds_away, status, match_date, home_score, away_score, outcome)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NULL, NULL, NULL)
-            """
-            historical_odds_values = (sport_key, 'tournament_placeholder', match_id, home_team, away_team, odds_home, odds_away, status, match_date)
-            cursor.execute(historical_odds_query, historical_odds_values)
-
+            values = (sport_key, 'tournament_placeholder', match_id, home_team, away_team, odds_home, odds_away, status, favorite)
+            cursor.execute(query, values)
             logging.info(f"Inserted/Updated odds for match {match_id}.")
         except KeyError as e:
             logging.error(f"Key error: {e} in match: {match}")
