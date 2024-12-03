@@ -1,24 +1,63 @@
-from fastapi import APIRouter, Depends, HTTPException
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from backend.app.core.mongodb import get_mongodb
-from backend.app.services.odds_service import fetch_odds_data, store_match_data, get_all_matches
+from fastapi import APIRouter, HTTPException
+from typing import List
+import httpx
+import hashlib
+import json
+from motor.motor_asyncio import AsyncIOMotorClient
 
 router = APIRouter()
 
+# MongoDB connection
+MONGODB_URL = "mongodb://localhost:27017"
+client = AsyncIOMotorClient(MONGODB_URL)
+db = client.sports_odds
+matches_collection = db.matches
+
 @router.post("/fetch-odds")
-async def fetch_and_store_odds(db: AsyncIOMotorDatabase = Depends(get_mongodb)):
-    """Fetch odds from API and store in MongoDB"""
-    matches = await fetch_odds_data()
-    if not matches:
-        raise HTTPException(status_code=400, detail="Failed to fetch odds data")
-    
-    for match in matches:
-        await store_match_data(db, match)
-    
-    return {"message": "Data inserted successfully"}
+async def fetch_and_store_odds():
+    API_KEY = "YOUR_API_KEY"  # Replace with your API key
+    SPORT = "cricket_test_match"
+    REGIONS = "eu"
+    MARKETS = "h2h"
+    ODDS_FORMAT = "decimal"
+
+    url = f"https://api.the-odds-api.com/v4/sports/{SPORT}/odds"
+    params = {
+        "api_key": API_KEY,
+        "regions": REGIONS,
+        "markets": MARKETS,
+        "oddsFormat": ODDS_FORMAT
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, params=params)
+            response.raise_for_status()
+            matches = response.json()
+
+            # Store each match in MongoDB
+            for match in matches:
+                # Create a unique ID based on teams and time
+                match_data = f"{match['home_team']}{match['away_team']}{match['commence_time']}"
+                match['_id'] = hashlib.md5(match_data.encode()).hexdigest()
+                
+                # Upsert the match data
+                await matches_collection.update_one(
+                    {'_id': match['_id']},
+                    {'$set': match},
+                    upsert=True
+                )
+
+            return {"message": "Data inserted successfully"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/matches")
-async def get_matches(db: AsyncIOMotorDatabase = Depends(get_mongodb)):
-    """Get all matches from database"""
-    matches = await get_all_matches(db)
-    return matches
+async def get_matches():
+    try:
+        cursor = matches_collection.find({})
+        matches = await cursor.to_list(length=None)
+        return matches
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
